@@ -65,6 +65,8 @@ REQUEST_URI=/ \
 cgi-fcgi -bind -connect $POD_NAME:9000
 ```
 
+![communication_test](./service_communication.gif "communication test")
+
 It works but i want to communicate over the service.
 In larger clusters you have to be able to communicate from one server to another.
 
