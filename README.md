@@ -67,3 +67,5 @@ cgi-fcgi -bind -connect $POD_NAME:9000
 
 It works but i want to communicate over the service.
 In larger clusters you have to be able to communicate from one server to another.
+
+Or you can check the timeout in browser or per curl with the address http://192.168.99.100/test
