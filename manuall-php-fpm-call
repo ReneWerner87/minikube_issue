@@ -1,0 +1,6 @@
+SCRIPT_FILENAME=/var/www/public/index.php \
+SCRIPT_NAME=/var/www/public/index.php \
+REQUEST_METHOD=GET \
+QUERY_STRING=/ \
+REQUEST_URI=/ \
+cgi-fcgi -bind -connect 127.0.0.1:9000
