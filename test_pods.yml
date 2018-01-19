@@ -1,0 +1,116 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gateway
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - host:
+    http:
+      paths:
+      - path: /test
+        backend:
+          serviceName: test-nginx
+          servicePort: 80
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: test-nginx-config
+data:
+  default.conf: |-
+    server {
+        listen 8080;
+        listen [::]:8080;
+
+        server_name test-nginx;
+
+        large_client_header_buffers 4 32k;
+
+        location / {
+            try_files $uri /index.php$is_args$args;
+        }
+
+        location ~ ^/.+\.php(/|$) {
+            root            /var/www/public;
+
+            fastcgi_index   index.php;
+            fastcgi_pass    test-php:9000;
+
+            include         fastcgi_params;
+            fastcgi_param   SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_param   SCRIPT_NAME     $fastcgi_script_name;
+        }
+
+        location ~ /\.ht {
+            deny all;
+        }
+    }
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: test-application
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: test-application
+    spec:
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: test-nginx-config
+      initContainers:
+        - name: init-logs
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          command: ['sh', '-c', 'echo \"do secret stuff\"']
+      containers:
+        - name: test-nginx # nginx container
+          image: test-nginx:0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /etc/nginx/conf.d/default.conf
+              name: nginx-config
+              subPath: default.conf
+        - name: test-php # fpm container
+          image: test-php:0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9000
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-nginx
+  labels:
+    name: test-nginx
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: test-application
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-php
+  labels:
+    name: test-php
+spec:
+  ports:
+    - port: 9000
+      targetPort: 9000
+  selector:
+    app: test-application

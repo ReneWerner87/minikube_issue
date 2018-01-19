@@ -1,0 +1,19 @@
+FROM nginx:1.11-alpine
+
+ENV BUILD_DEPS \
+        bash \
+        bash-doc \
+        bash-completion \
+        gawk \
+        sed \
+        fcgi \
+        ngrep \
+        grep \
+        bc \
+        busybox \
+        sudo
+
+RUN apk update \
+    && apk add --no-cache \
+        $BUILD_DEPS \
+    && rm -rf /tmp/* /var/tmp/*
